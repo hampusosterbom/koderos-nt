@@ -1,6 +1,7 @@
 ﻿
 using System.Diagnostics;
 using UnityEngine;
+using System.Collections;
 
 public class GunScript : MonoBehaviour
 {
@@ -10,6 +11,11 @@ public class GunScript : MonoBehaviour
     public float impactForce = 30f;
     public float fireRate = 15f;
 
+    public int maxAmmo = 10;
+    private int currentAmmo;
+    public float reloadTime = 1f;
+    private bool isRealoading = false;
+
     public Camera fpsCam;
     public ParticleSystem muzzleFlash;
     public GameObject impactEffect;
@@ -17,29 +23,58 @@ public class GunScript : MonoBehaviour
 
     private float nextTimeToFire = 0f;
 
+    public Animator animator;
+
     void Start()
     {
         m_shootingSound = GetComponent<AudioSource>();
+        currentAmmo = maxAmmo;
     }
 
 
+    
 
 
     // Update is called once per frame
     void Update()
                  {
-        
-        if(Input.GetButton("Fire1") && Time.time >= nextTimeToFire)
+        if (isRealoading)
+            return;
+
+        if (currentAmmo <= 0)
+        {
+            StartCoroutine(Reload());
+            return;
+        }
+
+        if (Input.GetButton("Fire1") && Time.time >= nextTimeToFire)
         {
             m_shootingSound.Play();
             nextTimeToFire = Time.time + 1f / fireRate;
             Shoot();
         }
 
+        IEnumerator Reload ()
+        {
+            isRealoading = true;
+
+            animator.SetBool("Reloading", true);
+
+            yield return new WaitForSeconds(reloadTime - .25f);
+
+            animator.SetBool("Reloading", false);
+
+            yield return new WaitForSeconds(.25f);
+
+            currentAmmo = maxAmmo;
+            isRealoading = false;
+        }
     }
-       public void Shoot ()
+    public void Shoot ()
        {
             muzzleFlash.Play();
+
+            currentAmmo--;
 
             RaycastHit hit;
             if(Physics.Raycast(fpsCam.transform.position, fpsCam.transform.forward, out hit, range));
@@ -62,7 +97,7 @@ public class GunScript : MonoBehaviour
        
        
             }
-       }
+    }
 }
 
 
